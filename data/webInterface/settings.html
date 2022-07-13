@@ -1,0 +1,123 @@
+<div class="container-sm ">
+    <form onSubmit="return false">
+        <div class="mb-3">
+            <label for="inputWifiSSID" class="form-label">Wifi SSID</label>
+            <input type="text" class="form-control" id="inputWifiSSID" placeholder="" aria-describedby="wifiSSID">
+        </div>
+        <div class="mb-3">
+            <label for="inputWifiPassword" class="form-label">Wifi Password</label>
+            <input type="password" class="form-control" id="inputWifiPassword">
+        </div>
+
+        <div class="mb-3">
+            <label for="inputWifiApSSID" class="form-label">Wifi Hotspot SSID</label>
+            <input type="text" class="form-control" id="inputWifiApSSID" aria-describedby="wifiApSSID">
+        </div>
+        <div class="mb-3">
+            <label for="inputWifiApPassword" class="form-label">Wifi Hotspot Password</label>
+            <input type="password" class="form-control" id="inputWifiApPassword">
+        </div>
+
+        <div class="mb-3 form-check form-switch">
+            <input type="checkbox" class="form-check-input" role="switch" id="autoApCheck">
+            <label class="form-check-label" for="autoApCheck">Automatic Wifi Hotspot</label>
+        </div>
+
+        <div class="mb-3 form-check form-switch">
+            <input type="checkbox" class="form-check-input" role="switch" id="fullApCheck">
+            <label class="form-check-label" for="fullApCheck">Wifi Hotspot only</label>
+        </div>
+
+
+        <button id="submitBtn" type="submit" class="btn btn-primary">Save</button>
+    </form>
+</div>
+
+<!-- Discable auto wifi modal -->
+<div class="modal" data-bs-backdrop="static" tabindex="-1" id="autoApModal">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Auto wifi hotspot</h5>
+            </div>
+            <div class="modal-body">
+                <p>Turning this feature off is not recommended. If Wifi connection fails you will have no other option
+                    but to re-flash the reader!</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" id="keep_it_on_btn" class="btn btn-secondary" data-bs-dismiss="modal">kepp it
+                    on</button>
+                <button type="button" id="turn_off_btn" class="btn btn-primary" data-bs-dismiss="modal">I understand,
+                    turn it off</button>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+
+    $(document).ready(function () {
+        // Refreshes the page when opening
+        $("#settings-tab").click(() => {
+            $.get("/get_wifi_settings", {
+            }, function (data) {
+                $("#inputWifiSSID").val(data.ssid);
+                $("#inputWifiPassword").val(data.password);
+                $("#inputWifiApSSID").val(data.apSsid);
+                $("#inputWifiApPassword").val(data.apPassword);
+
+                if (data.apMode) {
+                    $("#fullApCheck").prop("checked", true);
+                }
+                if (data.autoAp) {
+                    $("#autoApCheck").prop("checked", true);
+                }
+            });
+        })
+
+        function showSettingsSavedToast() {
+            let toast = new bootstrap.Toast($("#settingsSavedToast")[0],);
+            toast.show();
+        }
+
+        // Toggles the checkboxes 
+        $("#fullApCheck").change(function () {
+            if ($(this).prop("checked")) {
+                $("#autoApCheck").prop("checked", false);
+                $("#autoApCheck").prop("disabled", true);
+
+            } else {
+                $("#autoApCheck").prop("disabled", false);
+                $("#autoApCheck").prop("checked", true);
+            }
+        });
+
+        $("#autoApCheck").change(function () {
+            if (!$(this).prop("checked")) {
+                $("#autoApCheck").prop("checked", true);
+                let modal = new bootstrap.Modal($("#autoApModal")[0],);
+                modal.show();
+            }
+        })
+
+        $("#turn_off_btn").click(function () {
+            $("#autoApCheck").prop("checked", false);
+        })
+
+        $("#submitBtn").click(() => {
+            $.post("/save_settings", {
+                "wifiSSID": $("#inputWifiSSID").val(),
+                "wifiPasword": $("#inputWifiPassword").val(),
+                "apSsid": $("#inputWifiApSSID").val(),
+                "apPasword": $("#inputWifiApPassword").val(),
+                "autoAp": +$("#autoApCheck").prop("checked"),
+                "apMode": +$("#fullApCheck").prop("checked")
+            }).done(function (data) {
+                console.log(data);
+                if (data.success) {
+                    showSettingsSavedToast();
+                }
+            });
+        })
+    })
+
+</script>

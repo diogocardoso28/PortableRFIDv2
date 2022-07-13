@@ -1,0 +1,7 @@
+body{
+    font-weight: bold;
+}
+ #app{
+    height: 100vh;
+    /* background-color: red; */
+ }

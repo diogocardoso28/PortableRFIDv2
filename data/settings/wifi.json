@@ -1,0 +1,8 @@
+{
+    "ssid": "YOUR WI-FI SSID",
+    "password": "YOUR WI-FI PASSWORD",
+    "apSsid": "PortableRFID",
+    "apPassword": "rfid1234",
+    "apMode": false,
+    "autoAp": true
+}

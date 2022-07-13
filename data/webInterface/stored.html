@@ -1,0 +1,172 @@
+<div class="container">
+    <div class="table-responsive">
+        <table class="table table-hover table-striped table-dark" id="storedCardsTable">
+            <thead>
+                <tr>
+                    <th scope="col">#</th>
+                    <th scope="col">Name</th>
+                    <th scope="col">Uid</th>
+                    <th scope="col">Type</th>
+                    <th scope="col">Frequency</th>
+                    <th scope="col">Actions</th>
+
+                </tr>
+            </thead>
+            <tbody>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Edit card Modal -->
+
+<div class="modal" tabindex="-1" id="editCardModal">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Edit card #</h1>
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+            <div class="modal-body">
+                <form>
+                    <input type="hidden" id="InputCardId">
+                    <!-- Card Name -->
+                    <div class="mb-3">
+                        <label for="InputCardName" class="form-label">Name</label>
+                        <input type="text" class="form-control" id="InputCardName">
+                    </div>
+                    <!-- Card UID -->
+                    <div class="mb-3">
+                        <label for="InputCardUID" class="form-label">UID</label>
+                        <input type="text" class="form-control" id="InputCardUID">
+                    </div>
+                </form>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" data-bs-dismiss="modal" id="saveCardBTN">Save
+                    changes</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+
+    function splitStringBySegmentLength(source, segmentLength) { //Splits string in to smaller segments
+        if (!segmentLength || segmentLength < 1) throw Error('Segment length must be defined and greater than/equal to 1');
+        const target = [];
+        for (
+            const array = Array.from(source);
+            array.length;
+            target.push(array.splice(0, segmentLength).join('')));
+        return target;
+    }
+
+    function convertUIDtoString(uid) { //Convers uid from byte array to string
+        uidString = ""
+        uid.forEach(byte => {
+            uidString += byte;
+        })
+        return uidString;
+    }
+
+
+    function updateStoredCards(cardId) {
+        $.get('get_stored_cards', (response) => {
+            $("#storedCardsTable").find("tbody").empty();
+            response.cards.forEach(card => {
+                $("#storedCardsTable").find("tbody").append(`
+                    <tr class="cardRow" data-cardId ="${card.id}">
+                        <th scope="row">${card.id}</th>
+                        <td>${card.name}</td>
+                        <td>${convertUIDtoString(card.uid)}</td>
+                        <td>${card.type}</td>
+                        <td>${card.frequency} Mhz</td>
+                        <td>
+                            <div class="d-flex justify-content-evenly">
+                                <button type="button" class="btn btn-primary">Clone</button>
+                                <button type="button" class="btn btn-warning">Edit</button>
+                                <button type="button" class="btn btn-danger">Delete</button>
+                            </div>
+                        </td>
+                    </tr>
+                `)
+            })
+            //Edit Card
+            $("#storedCardsTable .btn-warning").off("click");
+            $("#storedCardsTable .btn-warning").click(function () {
+                let cardId = $(this).parent().parent().parent(".cardRow").attr("data-cardId");
+                $.get(`\get_card_by_id?cardId=${cardId}`, function (response) {
+                    showEditModal(response);
+                })
+            });
+
+            //clone card
+            $("#storedCardsTable .btn-primary").click(function () {
+                let cardId = $(this).parent().parent().parent(".cardRow").attr("data-cardId");
+                $.get(`\write_card_by_id?cardId=${cardId}`, function (response) {
+                    // showEditModal(response);
+
+                })
+            });
+            $("#storedCardsTable .btn-danger").off("click");
+            $("#storedCardsTable .btn-danger").click(function () {
+                let cardId = $(this).parent().parent().parent(".cardRow").attr("data-cardId");
+                $.get(`\delete_card_by_id?cardId=${cardId}`, function (response) {
+                    updateStoredCards();
+                    let toast = new bootstrap.Toast($("#deleteSuccessfulyToast")[0],);
+                    toast.show();
+                })
+            });
+
+
+            blinkRow(cardId);
+
+        });
+    }
+
+    $(document).ready(function () {
+        $("#stored-tab").click(() => { updateStoredCards() })
+
+        $("#saveCardBTN").click(() => {
+            let cardObject = {};
+            cardObject.id = $("#editCardModal").find("#InputCardId").val();
+            cardObject.name = $("#editCardModal").find("#InputCardName").val();
+            cardObject.uid = splitStringBySegmentLength($("#editCardModal").find("#InputCardUID").val(), 2); //convert UID from string back to array 
+
+            $.post("/save_card", {
+                "cardObject": JSON.stringify(cardObject),
+            }
+            ).done(() => {
+                updateStoredCards();
+
+                let toast = new bootstrap.Toast($("#editSaveSuccessfulyToast")[0],);
+                toast.show();
+            });
+        })
+
+    })
+
+    function blinkRow(cardId) { //Briefly cahnges row color to identify what card was selected
+        $("#storedCardsTable").find(`[data-cardId="${cardId}"]`).addClass("table-success");
+        setTimeout(() => {
+            $("#storedCardsTable").find(`[data-cardId="${cardId}"]`).removeClass("table-success");
+
+        }, 1000);
+    }
+
+    function showEditModal(card) {
+        $("#editCardModal").find(".modal-title").text(`Edit Card #${card.id}`);
+
+        $("#editCardModal").find("#InputCardName").val(card.name);
+        $("#editCardModal").find("#InputCardId").val(card.id);
+        $("#editCardModal").find("#InputCardUID").val(convertUIDtoString(card.uid));
+
+        let modal = new bootstrap.Modal($("#editCardModal")[0],);
+        modal.show();
+    }
+</script>

@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <!-- Loads Jquery -->
+    <script src="/js/jquery.js"></script>
+    <!-- Loads Boostrap -->
+    <script src="/js/bootstrap.js"></script>
+    <link rel="stylesheet" href="/css/bootstrap.css">
+
+
+    <title>Portable RFID</title>
+</head>
+
+<body>
+
+    <ul class="nav nav-tabs" id="myTab" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="home-tab" data-bs-toggle="tab" data-bs-target="#home" type="button"
+                role="tab" aria-controls="home" aria-selected="true">Home</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="stored-tab" data-bs-toggle="tab" data-bs-target="#stored" type="button"
+                role="tab" aria-controls="stored" aria-selected="false">Stored</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="settings-tab" data-bs-toggle="tab" data-bs-target="#settings" type="button"
+                role="tab" aria-controls="settings" aria-selected="false">Settings</button>
+        </li>
+    </ul>
+
+    <div class="container">
+        <div class="row">
+            <div class="col bg-success" id="readerStatus">
+
+            </div>
+            <div class="col " id="wifiStatus">
+            </div>
+            <div class="col bg-success" id="batteryStatus">
+                100%
+            </div>
+        </div>
+    </div>
+
+    <div class="tab-content" id="myTabContent">
+        <div class="tab-pane fade show active" id="home" role="tabpanel" aria-labelledby="home-tab"></div>
+        <div class="tab-pane fade" id="stored" role="tabpanel" aria-labelledby="stored-tab"></div>
+        <div class="tab-pane fade" id="settings" role="tabpanel" aria-labelledby="settings-tab"></div>
+    </div>
+
+    <div class="toast-container position-absolute bottom-0 end-0 p-3">
+        <!-- Events connection success toast -->
+        <div class="toast  align-items-center text-white bg-success border-0 " role="alert" aria-live="assertive"
+            aria-atomic="true" id="eventsSuccesfullToast">
+            <div class="d-flex">
+                <div class="toast-body">
+                    Connection successful!
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"
+                    aria-label="Close"></button>
+            </div>
+        </div>
+
+        <!-- Events connection terminated toast -->
+        <div class="toast  align-items-center text-white bg-danger border-0 " role="alert" aria-live="assertive"
+            aria-atomic="true" id="eventsFailedToast">
+            <div class="d-flex">
+                <div class="toast-body">
+                    Connection failed!
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"
+                    aria-label="Close"></button>
+            </div>
+        </div>
+        <!-- Settings saved successfuly toast -->
+        <div class="toast  align-items-center text-white bg-success border-0 " role="alert" aria-live="assertive"
+            aria-atomic="true" id="settingsSavedToast">
+            <div class="d-flex">
+                <div class="toast-body">
+                    Settings saved!
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"
+                    aria-label="Close"></button>
+            </div>
+        </div>
+
+        <!-- Edit success toast -->
+        <div class="toast  align-items-center text-white bg-success border-0 " role="alert" aria-live="assertive"
+            aria-atomic="true" id="editSaveSuccessfulyToast">
+            <div class="d-flex">
+                <div class="toast-body">
+                    Card saved successfuly
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"
+                    aria-label="Close"></button>
+            </div>
+        </div>
+
+        <!-- Delete success toast -->
+        <div class="toast  align-items-center text-white bg-success border-0 " role="alert" aria-live="assertive"
+            aria-atomic="true" id="deleteSuccessfulyToast">
+            <div class="d-flex">
+                <div class="toast-body">
+                    Card removed successfuly
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"
+                    aria-label="Close"></button>
+            </div>
+        </div>
+
+        <!-- Write success toast -->
+        <div class="toast  align-items-center text-white bg-success border-0 " role="alert" aria-live="assertive"
+            aria-atomic="true" id="writtenSuccessfulyToast">
+            <div class="d-flex">
+                <div class="toast-body">
+                    Card Written successfuly
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"
+                    aria-label="Close"></button>
+            </div>
+        </div>
+    </div>
+
+</body>
+
+</html>
+
+<script>
+    $(document).ready(() => {
+        // Alternates between esp path and devserver path for page includes 
+        //For development use only! Remove before releas
+        if (window.location.hostname != "127.0.0.1") {
+            $("#home").load("/home.html");
+            $("#stored").load("/stored.html");
+            $("#settings").load("/settings.html");
+        } else {
+            $("#home").load("/data/webInterface/home.html");
+            $("#stored").load("/data/webInterface/stored.html");
+            $("#settings").load("/data/webInterface/settings.html");
+
+        }
+    })
+
+    function updateStatusBar(data) {
+        // console.log(data);
+        data = JSON.parse(data);
+        // Changes card reader status
+        if (data.readerStatus == "ready") {
+            $("#readerStatus").removeClass("bg-danger");
+            $("#readerStatus").addClass("bg-success");
+            $("#readerStatus").removeClass("bg-warning");
+
+            $("#readerStatus").html("Ready");
+
+        } else if (data.readerStatus == "off") {
+            $("#readerStatus").addClass("bg-danger");
+            $("#readerStatus").removeClass("bg-success");
+            $("#readerStatus").removeClass("bg-warning");
+
+            $("#readerStatus").html("Off");
+        } else if (data.readerStatus == "write") {
+            $("#readerStatus").removeClass("bg-danger");
+            $("#readerStatus").removeClass("bg-success");
+            $("#readerStatus").addClass("bg-warning");
+
+            $("#readerStatus").html("Write");
+        }
+        // Changes wifi signal status
+        if (data.apMode == 1) {
+            $("#wifiStatus").html("AP Mode");
+            $("#wifiStatus").removeClass("bg-danger");
+            $("#wifiStatus").removeClass("bg-warning");
+            $("#wifiStatus").addClass("bg-success");
+        } else {
+            $("#wifiStatus").html(data.rssi + " Dbm");
+            $("#wifiStatus").removeClass("bg-danger");
+            $("#wifiStatus").removeClass("bg-warning");
+            $("#wifiStatus").removeClass("bg-success");
+            if (data.rssi > -70) {
+                $("#wifiStatus").addClass("bg-success");
+            } else if (data.rssi < -70 && data.rssi > -86) {
+                $("#wifiStatus").addClass("bg-warning");
+
+            } else {
+                $("#wifiStatus").addClass("bg-danger");
+
+            }
+
+        }
+    }
+
+    function showConnectionSucessToast() {
+        let toast = new bootstrap.Toast($("#eventsSuccesfullToast")[0],);
+        toast.show();
+    }
+
+    function showConnectionFailedToast() {
+        let toast = new bootstrap.Toast($("#eventsFailedToast")[0],);
+        toast.show();
+    }
+
+    if (!!window.EventSource) {
+        var source = new EventSource('/events');
+
+        source.addEventListener('open', function (e) {
+            console.log("Events Connected");
+            showConnectionSucessToast();
+        }, false);
+
+        source.addEventListener('error', function (e) {
+            if (e.target.readyState != EventSource.OPEN) {
+                console.log("Events Disconnected");
+                showConnectionFailedToast();
+            }
+        }, false);
+
+        source.addEventListener('message', function (e) {
+            console.log("message:", e.data);
+        }, false);
+
+        source.addEventListener('statusUpdate', function (e) {
+            updateStatusBar(e.data);
+
+        }, false);
+
+        source.addEventListener('newCardFound', function (e) {
+            data = JSON.parse(e.data);
+            updateStoredCards(data.id);
+        }, false);
+
+        source.addEventListener('cardWrittenSuccess', function (e) {
+            // data = JSON.parse(e.data);
+            // updateStoredCards(data.id);
+            let toast = new bootstrap.Toast($("#writtenSuccessfulyToast")[0],);
+            toast.show();
+
+        }, false);
+
+
+    }
+
+</script>
