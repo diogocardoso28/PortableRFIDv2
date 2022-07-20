@@ -2,6 +2,7 @@
 #include <Update.h>
 #include <WiFi.h>
 #include <ArduinoJson.h>
+#include <ESPmDNS.h>
 #include "ESPAsyncWebServer.h"
 #include "webserver.h"
 #include "filesystem.h"
@@ -15,7 +16,7 @@ extern int apStatus;
 extern int readerStatus;
 
 extern byte *uidToWrite;
-
+// TODO: add hostname to filesystem
 void initializeWifi()
 {
     Serial.print("Apmode: ");
@@ -55,6 +56,14 @@ void initializeWifi()
         Serial.println(WiFi.localIP());
         Serial.println(WiFi.RSSI());
         Serial.println("");
+        WiFi.setHostname("rfid"); // define hostname
+        // Define mdns
+        if (!MDNS.begin("rfid"))
+        {
+            Serial.println("Error starting mDNS");
+            return;
+        }
+
         startWebServer();
     }
     else
@@ -76,6 +85,13 @@ void initializeWifiAp()
 
     WiFi.softAP(getApSSID().c_str(), getApPassword().c_str());
     Serial.println(WiFi.softAPIP());
+    WiFi.setHostname("rfid"); // define hostname
+    // Define mdns
+    if (!MDNS.begin("rfid"))
+    {
+        Serial.println("Error starting mDNS");
+        return;
+    }
 }
 
 // Sets uid to write to new cards
